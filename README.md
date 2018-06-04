@@ -25,7 +25,7 @@ cd /some/path/to/folder/with/backups
 Run the script:
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/ghaiklor/backup-my-github/master/backup.sh)
+bash <(curl -s https://raw.githubusercontent.com/RomaniukVadim/backup-my-github/master/backup.sh)
 ```
 
 ## License
