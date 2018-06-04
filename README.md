@@ -2,6 +2,9 @@
 
 _Clones all your GitHub public repositories to your machine_
 
+
+![1](https://i.imgur.com/H3Yg4VP.jpg)
+
 ## Prerequisites
 
 - curl
