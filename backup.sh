@@ -68,21 +68,71 @@ function cloneRepositories() {
     read -r -p "What is your username on GitHub: " username
     read -r -p "What is your personal access token: " token
     echo
-
     blue_color
+
+    mkdir -p my
+    pushd my
+
     repository_count=$(curl -XGET -s https://"${username}":"${token}"@api.github.com/users/"${username}" | jq -c --raw-output ".public_repos")
     repositories=$(curl -XGET -s https://"${username}":"${token}"@api.github.com/users/"${username}"/repos?per_page="${repository_count}" | jq -c --raw-output ".[].ssh_url")
 
+    green_color
+    echo "Cloning ${repository_count} repositories"
+
+    blue_color
     for repository in ${repositories}; do
         echo "Cloning ${repository}..."
         git clone --quiet "${repository}"
     done
 
+    popd
+
     green_color
-    echo "All your repositories are successfully cloned in current directory"
+    echo "All your repositories are successfully cloned in ./my directory"
+}
+
+function cloneStars() {
+    green_color
+    echo
+    read -r -p "What is your username on GitHub: " username
+    read -r -p "What is your personal access token: " token
+    echo
+    blue_color
+
+    mkdir -p stars
+    pushd stars
+
+    repository_pages=$(curl -XGET -s https://"${username}":"${token}"@api.github.com/user/starred?per_page=100 -D - -o /dev/null | sed -nEe 's/^Link.+page=([[:digit:]]+)>; rel="last"/\1/p' | tr -d '[:space:]')
+
+    green_color
+    echo "Cloning ${repository_pages} pages of 100 repositories"
+
+    blue_color
+    bad=0
+    count=1
+    for page in `seq 1 $repository_pages`; do
+        echo "Getting page ${page}..."
+        repo_pairs=$(curl -XGET -s https://"${username}":"${token}"@api.github.com/user/starred?per_page=100\&page="${page}" | jq -c --raw-output ".[]|{url:.ssh_url,name:.full_name}")
+        for repo in ${repo_pairs}; do
+            url=$(echo $repo | jq -c --raw-output ".url")
+            name=$(echo $repo | jq -c --raw-output ".name")
+            echo "$count. Cloning ${name} from ${url}..."
+            mkdir -p $(dirname $name)
+            git clone --quiet "${url}" "${name}" || (let bad+=1; continue)
+            let count+=1
+        done
+    done
+
+    popd
+
+    green_color
+    echo "${count} starred repositories are successfully cloned in ./stars directory"
+    echo "${bad} repositories had errors"
 }
 
 hello
 checkForCurl
 checkForJQ
+# Todo: use env vars for github login/token
 cloneRepositories
+cloneStars
